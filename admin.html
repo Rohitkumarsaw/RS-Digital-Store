@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin Panel Image Upload/Preview</title>
+<style>
+body { font-family:'Segoe UI',sans-serif; background:linear-gradient(135deg,#0A0F25,#1A2238); color:#13fff3; margin:0;}
+#loginSection,#adminContent{ max-width:900px; margin:44px auto 0; padding:22px 14px; background:rgba(30,40,70,0.78); border-radius:18px; box-shadow:0 0 31px #0ff7 inset;}
+#loginSection{display:block;} #adminContent{display:none;}
+form{max-width:420px;margin:0 auto;}
+label{display:block;margin:13px 0 8px 0;font-weight:600;}
+input[type=text],input[type=password],textarea{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.4px solid #0fe;background:#15243a;color:#0ff;font-size:1.09rem;margin-bottom:7px;}
+input:focus,textarea:focus{outline:2px solid #2ffcc2;}
+textarea{min-height:54px;}
+h1{text-align:center;color:#20fff6;text-shadow:0 0 13px #31ffe8;}
+button{padding:12px 30px;margin-top:9px;border:none;border-radius:13px;background:linear-gradient(135deg,#13ffe7,#18adfa);color:#0e294e;font-weight:700;box-shadow:0 0 14px #12ffe9b3 inset;cursor:pointer;font-size:1.07rem;transition:background 0.22s,transform 0.17s;}
+button:hover{background:linear-gradient(135deg,#29fff6,#18bbfb);transform:scale(1.08);}
+#logoutBtn{float:right;background:linear-gradient(135deg,#ff2099,#f11);color:#fff;}
+#userPanelBtn{
+ float:right;margin-left:9px;margin-top:5px;
+ background:linear-gradient(135deg,#00ffc3,#15a3c5);color:#005854;
+ padding:12px 27px;font-weight:700;font-size:1.06rem;border-radius:12px;border:none;
+ box-shadow:0 0 14px #11ffe7b3 inset;transition:background 0.18s;
+}
+#userPanelBtn:hover{background:linear-gradient(135deg,#58ffe9,#11adfb);}
+#productsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:26px;margin-top:28px;}
+.card{background:rgba(46,68,120,0.78);border-radius:16px;padding:16px 12px 13px 12px;box-shadow:0 0 23px #0ffffb80;display:flex;flex-direction:column;min-width:0;word-break:break-word;}
+.card h4{margin:9px 0 10px;}
+.card img{width:100%;height:103px;object-fit:cover;border-radius:13px;border:2px solid #0ff;margin-bottom:8px;background:#171a23;}
+.btn-group{display:flex;gap:10px;margin-top:15px;}
+.btn-edit,.btn-delete,.btn-view{flex:1;padding:10px 14px;border-radius:13px;border:none;font-weight:700;color:#fff;cursor:pointer;font-size:1rem;}
+.btn-edit{background:linear-gradient(135deg,#00e6ff,#1a62c6);}
+.btn-edit:hover{background:linear-gradient(135deg,#47fcff,#69caee);}
+.btn-delete{background:linear-gradient(135deg,#db2b2b,#a80000);}
+.btn-delete:hover{background:linear-gradient(135deg,#fc5656,#cf1d1d);}
+.btn-view{background:linear-gradient(135deg,#42ffb7,#0efce4);}
+.btn-view:hover{background:linear-gradient(135deg,#70fddc,#21e8f9);}
+@media (max-width:700px){
+  #adminContent,#loginSection{max-width:99vw;}
+  #productsGrid{grid-template-columns:1fr;}
+  .card img{height:66px;}
+  form{max-width:99vw;}
+  #logoutBtn,#userPanelBtn{float:none;display:inline-block;width:100%;margin:0 0 12px 0;}
+}
+
+/* MODAL SCROLLING & RESPONSIVITY FIX */
+.modalBG{display:none;position:fixed;inset:0;background:rgba(4,13,30,0.79);backdrop-filter:blur(3px);z-index:1000;justify-content:center;align-items:center;overflow-y:auto;}
+.modalBG.active{display:flex;}
+.modalInner{
+  background:rgba(22,38,75,0.97);
+  border-radius:19px;color:#1fffda;
+  min-width:10px;
+  max-width:99vw;
+  width:100%;
+  max-height:94vh;
+  box-sizing:border-box;
+  box-shadow:0 0 21px #27fdff70 inset;
+  position:relative;
+  padding:29px 22px 21px 22px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  overflow-y:auto;
+}
+.modalInner form{
+  width:100%;
+  max-height:84vh;
+  overflow-y:auto;
+  padding-bottom:10px;
+}
+@media (min-width:410px){ .modalInner{width:410px;} }
+@media (max-width:410px){.modalInner{width:99vw;padding:15px 4vw;}input[type=text],textarea{font-size:1.01rem;}}
+.img-preview-upload{width:98%;height:112px;object-fit:cover;border-radius:12px;border:2px solid #26ffc7;margin-bottom:8px;background:#101930;display:block;}
+.img-preview-upload[hidden]{display:none;}
+.upload-btn-row{display:flex;gap:10px;margin-bottom:7px;}
+input[type="file"]{display:none;}
+.upload-label-btn{background:linear-gradient(135deg,#0fffc6,#54e0f8);color:#004;font-size:0.98rem;border-radius:9px;padding:7px 17px;font-weight:600;cursor:pointer;box-shadow:0 0 8px #14ffe7 inset;transition:background 0.2s;}
+.upload-label-btn:hover{background:linear-gradient(135deg,#5ffff7,#5ae6fa);}
+.modalBtns{display:flex;gap:18px;justify-content:center;margin-top:21px;}
+.btn-save{background:linear-gradient(135deg,#19fff7 70%,#18b4fc);color:#042d39;}
+.btn-save:hover{background:linear-gradient(135deg,#63fff6,#47e2fa);}
+.btn-cancel{background:linear-gradient(135deg,#fd3838,#bb0711);color:#fff;}
+.btn-cancel:hover{background:linear-gradient(135deg,#ff7979,#db1c1c);}
+.download-links-section{background:rgba(28,40,90,0.64);border-radius:10px;padding:14px 12px;margin-bottom:13px;}
+.download-links-row{display:flex;gap:7px;margin-bottom:7px;}
+input.link-title{flex:1;}
+input.link-url{flex:2;}
+.remove-link-btn{background:linear-gradient(135deg,#fd3838,#bb0711);color:#fff;padding:3px 12px;border:none;border-radius:7px;font-size:0.95rem;font-weight:700;cursor:pointer;}
+.add-link-btn{background:linear-gradient(135deg,#0fffc6,#54e0f8);color:#042d39;padding:8px 19px;border:none;border-radius:9px;font-size:1.05rem;font-weight:700;margin:3px 0 0 0;cursor:pointer;}
+@media (max-width:480px){
+  .modalInner{max-width:99vw;padding:15px 2vw;}
+  .modalInner form{max-height:74vh;}
+  .download-links-row{flex-direction:column;gap:4px;}
+  .modalBtns{flex-direction:column;gap:9px;}
+}
+
+
+
+
+
+
+
+/* Wrapper div को न जोड़ें अगर नहीं है तो नीचे के rules सीधे बटन्स पर लगाएं */
+#logoutBtn, #userPanelBtn {
+  float: none;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 10px;
+  white-space: nowrap;
+  padding: 12px 30px;
+  border-radius: 13px;
+  font-weight: 700;
+  font-size: 1.07rem;
+  cursor: pointer;
+  box-shadow: 0 0 14px inset;
+  transition: background 0.22s, transform 0.17s;
+}
+
+/* एक साथ container में inline-block रखकर align करते हैं */
+#logoutBtn {
+  background: linear-gradient(135deg, #ff2099, #f11);
+  color: #fff;
+  box-shadow: 0 0 14px #ff2673 inset;
+}
+
+#logoutBtn:hover {
+  background: linear-gradient(135deg, #ff4ea5, #f33);
+  transform: scale(1.08);
+}
+
+#userPanelBtn {
+  background: linear-gradient(135deg, #00ffc3, #15a3c5);
+  color: #005854;
+  box-shadow: 0 0 14px #11ffe7b3 inset;
+  margin-left: 10px;
+}
+
+#userPanelBtn:hover {
+  background: linear-gradient(135deg, #58ffe9, #11adfb);
+}
+
+/* Responsive में दोनों बटन लाइन नीचे हो जाएँ */
+@media (max-width: 700px) {
+  #logoutBtn, #userPanelBtn {
+    display: block;
+    width: 100%;
+    margin-left: 0;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<div id="loginSection">
+  <h1>Admin Login</h1>
+  <form id="loginForm">
+    <label>Username</label>
+    <input id="loginUser" type="text" autocomplete="off" required />
+    <label>Password</label>
+    <input id="loginPass" type="password" autocomplete="off" required />
+    <button type="submit">Login</button>
+  </form>
+</div>
+
+<div id="adminContent">
+  <button id="logoutBtn">Logout</button>
+  <button id="userPanelBtn">Switch to User Panel</button>
+  <h1>Product Management</h1>
+  <button id="addProductBtn" style="margin-left:0;margin-bottom:8px;">Add Product</button>
+  <div id="productsGrid"></div>
+</div>
+
+<!-- Product Modal -->
+<div id="productModal" class="modalBG">
+  <div class="modalInner">
+    <form id="productForm" autocomplete="off" style="width:100%;">
+      <input type="hidden" id="productId" />
+      <h2 id="modalTitle" style="margin-bottom:19px;text-align:left;">Add Product</h2>
+      <div class="upload-btn-row">
+        <img id="productImagePreview" class="img-preview-upload" hidden />
+        <label class="upload-label-btn">
+          Upload Image
+          <input id="productImageFile" type="file" accept="image/*" />
+        </label>
+      </div>
+      <label>Or Image URL</label>
+      <input type="text" id="productImage" placeholder="https://.../image.jpg" autocomplete="off"/>
+      <label>Product Title</label>
+      <input type="text" id="productTitle" required autocomplete="off"/>
+      <label>Product Description</label>
+      <textarea id="productDescription" required></textarea>
+      <div class="download-links-section">
+        <label>Download Links (Multiple Allowed)</label>
+        <div id="downloadLinksContainer"></div>
+        <button type="button" class="add-link-btn" id="addDownloadLinkBtn">+ Add Download Link</button>
+      </div>
+      <div class="modalBtns">
+        <button type="submit" class="btn-save">Save</button>
+        <button type="button" id="cancelProduct" class="btn-cancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- View Modal -->
+<div id="viewProductModal" class="modalBG">
+  <div class="modalInner">
+    <img id="viewProductImg" />
+    <h2 id="viewProductTitle"></h2>
+    <div style="margin:8px 0 13px;"><span id="viewProductDescription"></span></div>
+    <div id="viewDownloadLinks"></div>
+    <button id="viewCloseBtn" class="btn-cancel" style="display:block;margin:20px auto 0 auto;">Close</button>
+  </div>
+</div>
+
+<script>
+const USERNAME = "rsgnsnvk18", PASSWORD = "Rohit@14";
+const loginSection = document.getElementById('loginSection');
+const adminContent = document.getElementById('adminContent');
+const loginForm = document.getElementById('loginForm');
+const logoutBtn = document.getElementById('logoutBtn');
+const userPanelBtn = document.getElementById('userPanelBtn');
+userPanelBtn.onclick = ()=>{ window.location.href = "index.html"; };
+loginForm.onsubmit = function(e){
+  e.preventDefault();
+  if(loginForm.loginUser.value===USERNAME && loginForm.loginPass.value===PASSWORD){
+    loginSection.style.display = 'none';
+    adminContent.style.display = 'block';
+    loadProducts(); renderProducts();
+  }else alert("Wrong login");
+};
+logoutBtn.onclick = ()=>{adminContent.style.display='none';loginSection.style.display='block';loginForm.reset();}
+
+let products = {};
+const addProductBtn = document.getElementById('addProductBtn'), productsGrid = document.getElementById('productsGrid');
+const productModal = document.getElementById('productModal'), productForm = document.getElementById('productForm'), modalTitle = document.getElementById('modalTitle');
+const productTitleInput = document.getElementById('productTitle'), productIdInput = document.getElementById('productId'), productImageInput = document.getElementById('productImage'),
+  productImageFile = document.getElementById('productImageFile'), productImagePreview = document.getElementById('productImagePreview'),
+  productDescriptionInput = document.getElementById('productDescription'), cancelProductBtn = document.getElementById('cancelProduct'),
+  downloadLinksContainer = document.getElementById('downloadLinksContainer'), addDownloadLinkBtn = document.getElementById('addDownloadLinkBtn');
+
+let uploadedBase64 = "";
+
+// IMAGE HANDLING
+productImageFile.onchange = function(e){
+  const file = productImageFile.files[0];
+  if(file){
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      uploadedBase64 = ev.target.result;
+      productImagePreview.src = uploadedBase64;
+      productImagePreview.hidden = false;
+      productImageInput.value = ""; // clear URL if freshly uploading
+    };
+    reader.readAsDataURL(file);
+  }
+};
+productImageInput.oninput = function(){
+  if(productImageInput.value.trim() !== ""){
+    productImagePreview.src = productImageInput.value.trim();
+    productImagePreview.hidden = false;
+    uploadedBase64 = "";
+  } else {
+    productImagePreview.src = "";
+    productImagePreview.hidden = true;
+    uploadedBase64 = "";
+  }
+};
+
+// Download links helpers
+function createDownloadLinkRow(link={}, removable=true){
+  const row = document.createElement('div');
+  row.className = "download-links-row";
+  row.innerHTML = `
+    <input class="link-title" type="text" placeholder="Title (e.g. Windows, Android)" value="${link.title?link.title:""}" required />
+    <input class="link-url" type="text" placeholder="Download URL" value="${link.url?link.url:""}" required />
+    ${removable ? '<button type="button" class="remove-link-btn">&#x2716;</button>' : ''}
+  `;
+  if(removable){
+    row.querySelector('.remove-link-btn').onclick = ()=>{ row.remove(); };
+  }
+  return row;
+}
+
+addDownloadLinkBtn.onclick = function(){
+  downloadLinksContainer.appendChild(createDownloadLinkRow());
+};
+
+// INIT/RESET download links
+function clearDownloadLinks(){
+  downloadLinksContainer.innerHTML = '';
+  downloadLinksContainer.appendChild(createDownloadLinkRow({},false)); // at least one, not removable
+}
+// SET EXISTING download links (edit mode)
+function setDownloadLinks(links){
+  downloadLinksContainer.innerHTML = '';
+  if(links && links.length){
+    links.forEach((dl,i)=>{
+      downloadLinksContainer.appendChild(createDownloadLinkRow(dl, i!==0));
+    });
+  }else{
+    downloadLinksContainer.appendChild(createDownloadLinkRow({},false));
+  }
+}
+function readDownloadLinks(){
+  // scan all downloadLinksContainer rows for title+url
+  const rows = downloadLinksContainer.querySelectorAll('.download-links-row');
+  const arr = [];
+  for(const row of rows){
+    const title = row.querySelector('.link-title').value.trim();
+    const url = row.querySelector('.link-url').value.trim();
+    if(title && url) arr.push({title,url});
+  }
+  return arr;
+}
+
+function saveProducts(){localStorage.setItem('admin_products',JSON.stringify(products));}
+function loadProducts(){products=JSON.parse(localStorage.getItem('admin_products')||'{}');}
+function renderProducts(){
+  productsGrid.innerHTML='';
+  if(Object.keys(products).length===0){
+    productsGrid.innerHTML='<p>No products available yet.</p>';return;
+  }
+  Object.entries(products).forEach(([id,p])=>{
+    const card=document.createElement('div');
+    card.className='card';
+    card.innerHTML=`
+      <img src="${p.imageUrl}" alt="${p.title}" />
+      <h4>${p.title}</h4>
+      <p>${p.description}</p>
+      <div class="btn-group">
+        <button class="btn-view" data-id="${id}">View</button>
+        <button class="btn-edit" data-id="${id}">Edit</button>
+        <button class="btn-delete" data-id="${id}">Delete</button>
+      </div>`;
+    productsGrid.appendChild(card);
+  });
+}
+function showProductModal(editId){
+  productModal.classList.add("active");
+  uploadedBase64 = "";
+  if(editId){
+    modalTitle.textContent = "Edit Product";
+    const p = products[editId];
+    productIdInput.value = editId || "";
+    productTitleInput.value = p.title;
+    if(p.imageUrl && p.imageUrl.startsWith('data:image/')) {
+      productImagePreview.src = p.imageUrl;
+      productImagePreview.hidden = false;
+      uploadedBase64 = p.imageUrl;
+      productImageInput.value = "";
+    } else if(p.imageUrl) {
+      productImagePreview.src = p.imageUrl;
+      productImagePreview.hidden = false;
+      uploadedBase64 = "";
+      productImageInput.value = p.imageUrl;
+    } else {
+      productImagePreview.hidden = true;
+      productImagePreview.src = "";
+      productImageInput.value = "";
+      uploadedBase64 = "";
+    }
+    productDescriptionInput.value = p.description;
+    setDownloadLinks(p.downloadLinks);
+  } else {
+    modalTitle.textContent='Add Product';
+    productIdInput.value='';
+    productForm.reset();
+    productImagePreview.hidden = true;
+    productImagePreview.src = "";
+    uploadedBase64 = "";
+    clearDownloadLinks();
+  }
+}
+function hideProductModal(){ productModal.classList.remove("active"); }
+
+addProductBtn.onclick = ()=>showProductModal();
+cancelProductBtn.onclick = hideProductModal;
+
+productForm.onsubmit = function(e){
+  e.preventDefault();
+  let finalImg = "";
+  if(uploadedBase64 !== "") finalImg = uploadedBase64;
+  else if(productImageInput.value.trim()!=="") finalImg = productImageInput.value.trim();
+  else finalImg = "";
+
+  const id = productIdInput.value || 'p_' + Date.now();
+  const downloadLinksArr = readDownloadLinks();
+  products[id]={
+    title:productTitleInput.value.trim(),
+    imageUrl:finalImg,
+    description:productDescriptionInput.value.trim(),
+    downloadLinks:downloadLinksArr
+  };
+  saveProducts(); renderProducts(); hideProductModal();
+};
+
+productsGrid.onclick=function(e){
+  if(e.target.classList.contains('btn-edit'))return showProductModal(e.target.dataset.id);
+  if(e.target.classList.contains('btn-delete')){
+    const id=e.target.dataset.id;
+    if(confirm('Delete this product?')){ delete products[id]; saveProducts(); renderProducts();}
+    return;
+  }
+  if(e.target.classList.contains('btn-view')){
+    const id=e.target.dataset.id, p=products[id]; if(!p)return;
+    document.getElementById('viewProductImg').src = p.imageUrl;
+    document.getElementById('viewProductTitle').textContent = p.title;
+    document.getElementById('viewProductDescription').textContent = p.description;
+    // Render download links
+    const vdl = document.getElementById('viewDownloadLinks');
+    vdl.innerHTML = '';
+    if(p.downloadLinks && p.downloadLinks.length){
+      p.downloadLinks.forEach(dl=>{
+        const a=document.createElement('a');
+        a.href=dl.url;
+        a.textContent=dl.title;
+        a.target="_blank";
+        a.className = "btn-view";
+        a.style="display:inline-block;margin:7px 7px 3px 0;padding:7px 18px;";
+        vdl.appendChild(a);
+      });
+    }else{
+      vdl.innerHTML = `<span style="color:#ffb9b9;">No download links available.</span>`;
+    }
+    document.getElementById('viewProductModal').classList.add("active");
+  }
+};
+document.getElementById('viewCloseBtn').onclick=()=>document.getElementById('viewProductModal').classList.remove("active");
+window.onclick = function(e){
+  [productModal,document.getElementById('viewProductModal')].forEach(m=>{if(e.target===m)m.classList.remove("active");});
+};
+(function(){ if(localStorage.getItem('admin_products')){ loadProducts(); } })();
+</script>
+</body>
+</html>

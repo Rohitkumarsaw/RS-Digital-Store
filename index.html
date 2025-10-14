@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RS Digital Store</title>
+<style>
+  html, body {
+    margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0A0F25, #1A2238);
+    color: #0ff; min-height: 100vh; overflow-x: hidden;
+  }
+  .header-main {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: rgba(15, 25, 50, 0.85);
+    box-shadow: 0 0 20px #0ff;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 10px 15px; z-index: 1001;
+  }
+  .brand-area {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; cursor: default;
+  }
+  .brand-logo {
+    width: 44px; height: 44px; display: flex; justify-content: center; align-items: center;
+    font-weight: 900; font-size: 1.5rem; color: #00ffdd;
+    border-radius: 50%; background: transparent; border: 2px solid #0ff;
+    user-select: none; font-family: 'Segoe UI Black', Arial, sans-serif;
+  }
+  .brand-area h1 {
+    margin: 0; font-weight: 700; font-size: 1.2rem;
+    text-shadow: 0 0 10px #0ff; white-space: nowrap; color: #0ff;
+  }
+  nav.header-nav {
+    display: flex; align-items: center; gap: 12px;
+    flex-grow: 1; justify-content: center; flex-wrap: wrap;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+  }
+  nav.header-nav button, .switch-admin {
+    padding: 10px 16px; border-radius: 20px; border: none;
+    font-weight: 600;
+    background: linear-gradient(135deg, #00eeff, #5060ff);
+    color: #001122;
+    box-shadow: 0 0 20px #0ff inset;
+    cursor: pointer; font-size: 1rem; white-space: nowrap;
+    min-width: 120px;
+  }
+  nav.header-nav button:hover, nav.header-nav button.active, .switch-admin:hover {
+    background: linear-gradient(135deg, #00ffbb, #3080ff);
+    box-shadow: 0 0 30px #0ff inset; color: #002244;
+  }
+  .switch-admin {
+    background: linear-gradient(135deg, #00ff99, #33ccee);
+    color: #003322;
+  }
+  .header-search { flex-shrink: 0; min-width: 180px; }
+  .header-search input[type=search] {
+    width: 180px; max-width: 14rem;
+    padding: 9px 16px; border-radius: 24px; border: 1px solid #0ff;
+    background: rgba(0,255,255,0.12); color: #0ff; font-size: 1rem;
+    box-shadow: 0 0 22px #0ff inset;
+    transition: box-shadow 0.3s, background 0.3s;
+  }
+  .header-search input[type=search]:focus {
+    outline: none;
+    background: rgba(0,255,255,0.25);
+    box-shadow: 0 0 32px #0ff inset;
+  }
+  #hamburgerBtn {
+    display: none; background: none; border: none; cursor: pointer; padding: 8px; margin-left: 8px;
+  }
+  #hamburgerBtn div {
+    width: 24px; height: 3px; background-color: #0ff;
+    margin: 5px 0; border-radius: 2px; transition: all 0.3s;
+  }
+  #hamburgerBtn.open div:nth-child(1) { transform: rotate(45deg) translate(5px, 6px);}
+  #hamburgerBtn.open div:nth-child(2) { opacity: 0; }
+  #hamburgerBtn.open div:nth-child(3) { transform: rotate(-45deg) translate(5px, -6px);}
+  #contentContainer {
+    padding: 90px 16px 140px; max-width: 1024px; margin: 0 auto; transition: filter 0.3s;
+  }
+  #productGrid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 22px;
+  }
+  .product-card {
+    background: rgba(30,60,90,0.5);
+    border-radius: 16px; padding: 15px; box-shadow: 0 0 15px #0ff;
+    cursor: pointer; display: flex; flex-direction: column; align-items: center;
+    transition: transform 0.3s, box-shadow 0.3s; height: 100%;
+  }
+  .product-card:hover { transform: translateY(-8px); box-shadow: 0 0 30px #0ff; }
+  .product-card img {
+    width: 100%; height: 140px; object-fit: cover; border-radius: 12px;
+    border: 2px solid #0ff; margin-bottom: 12px; flex-shrink: 0;
+  }
+  .product-title {
+    font-size: 1.1rem; font-weight: 700; text-align: center; color: #0ff;
+    text-shadow: 0 0 10px #0ff; margin-bottom: 8px; flex-grow: 1;
+  }
+  .view-btn {
+    border: none; padding: 10px 18px;
+    background: linear-gradient(135deg, #00ffcc, #00ffaa);
+    color: #003; border-radius: 20px; font-weight: 600;
+    box-shadow: 0 0 20px #00ffaa; cursor: pointer; transition: transform 0.1s;
+    width: 100%; max-width: 140px; align-self: center;
+  }
+  .view-btn:active { transform: scale(0.95);}
+  #modalOverlay {
+    display: none; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(20,30,50,0.95);
+    border-radius: 20px; padding: 20px; max-width: 400px; width: 95%;
+    box-shadow: 0 0 30px #0ff inset;
+    color: #aff; flex-direction: column; z-index: 3001;
+    outline: none; overflow-y: auto; max-height: 94vh;
+  }
+  #modalOverlay img {
+    width: 100%; height: 180px; border-radius: 16px; border: 2px solid #0ff;
+    margin-bottom: 15px; object-fit: cover; flex-shrink: 0;
+  }
+  #modalOverlay h2 {
+    margin: 0 0 12px 0; color: #0ff; text-shadow: 0 0 15px #0ff; font-size: 1.5rem;
+  }
+  #modalOverlay p {
+    flex-grow: 1; margin-bottom: 10px; color: #baf;
+    max-height: 120px; overflow-y: auto; font-size: 1rem;
+  }
+  #modalDownloadLinks {
+    margin: 5px 0 9px 0; display: flex; flex-direction: column; gap: 9px; align-items: stretch;
+  }
+  .download-link-btn {
+    margin: 0; background: linear-gradient(135deg, #26ffd3, #38dafd);
+    color: #003951; border-radius: 12px; padding: 10px 0; font-weight: 700;
+    border: none; cursor: pointer; font-size: 1rem;
+    box-shadow: 0 0 10px #13ffd8 inset; transition: background 0.2s, color 0.2s;
+    text-align: center; width: 100%; display: block;
+  }
+  .download-link-btn:hover {
+    background: linear-gradient(135deg, #3bffc9, #61eaff); color: #002740;
+  }
+  #modalButtons { display: flex; gap: 16px; justify-content: center; margin-top: 10px;}
+  #bookmarkBtn {
+    position: absolute; top: 15px; right: 15px; font-size: 28px;
+    background: none; border: none; color: #0ff; text-shadow: 0 0 10px #0ff;
+    cursor: pointer; transition: color 0.3s; z-index: 3100;
+  }
+  #bookmarkBtn.bookmarked {
+    color: #0f0; text-shadow: 0 0 14px #0f0;
+  }
+  .modal-btn {
+    border: none; border-radius: 20px; padding: 12px 0;
+    font-weight: 700; cursor: pointer; color: black;
+    background: linear-gradient(135deg, #00ff99, #00ffaa);
+    box-shadow: 0 0 20px #00ffaa; flex: 1; position: relative;
+    overflow: hidden; font-size: 1rem; transition: transform 0.1s;
+  }
+  .modal-btn:active { transform: scale(0.95);}
+  #bottomBar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,30,0.98);
+    display: flex; gap: 8px; justify-content: center; padding: 8px 4px;
+    box-shadow: 0 -4px 15px #0ff; z-index: 1002; flex-wrap: wrap;
+  }
+  #bottomBar button {
+    background: linear-gradient(135deg,#00ffaa,#00cccc);
+    border: none; border-radius: 16px; padding: 8px 12px;
+    font-weight: 600; color: #004d4d;
+    box-shadow: 0 0 24px #00ffaa inset; cursor: pointer;
+    font-size: 0.9rem; min-width: 100px; flex-grow: 1;
+    max-width: 180px; text-align: center;
+  }
+  #bottomBar button:hover {
+    background: linear-gradient(135deg,#00ffcc,#009999);
+    color: #002222; box-shadow: 0 0 40px #00ffcc inset;
+  }
+  #policyModal {
+    display: none; position: fixed; top: 20%; left: 50%;
+    transform: translateX(-50%); max-width: 400px; width: 90%; padding: 20px;
+    z-index: 3002; background: rgba(0,255,255,0.1); border-radius: 16px;
+    color: #0ff; box-shadow: 0 0 30px #0ff inset; max-height: 60vh; overflow-y: auto;
+  }
+  #policyModal h3 { margin-top: 0; font-size: 1.4rem;}
+  #policyCloseBtn {
+    margin-top: 14px; padding: 10px 28px; border: none; border-radius: 14px;
+    background: linear-gradient(135deg, #00ffbb 60%, #00c3ff 100%);
+    color: #013146; font-weight: 700; font-size: 1.08rem;
+    box-shadow: 0 0 24px #00ffe3 inset, 0 2px 14px #0005;
+    cursor: pointer; transition: background 0.22s, box-shadow 0.22s,
+    color 0.22s, transform 0.13s; outline: none; width: 100%;
+  }
+  #policyCloseBtn:hover, #policyCloseBtn:focus {
+    background: linear-gradient(135deg, #33ffd7, #1b8cf1 99%);
+    color: #002850; box-shadow: 0 0 40px #00ffe6 inset, 0 2px 22px #0008;
+    transform: scale(1.05);
+  }
+  /* Social icons style */
+  .socials-icons { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 2px;}
+  .social-icon-link { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(36,255,252,0.15); transition: background 0.2s;}
+  .social-icon-link:hover { background: rgba(36,255,252,0.25);}
+  .social-icon-link svg { width: 22px; height: 22px;}
+  /* Responsive */
+  @media (max-width: 900px) {
+    #productGrid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .header-search { min-width: 140px; }
+    nav.header-nav button, .switch-admin {
+      font-size: 0.9rem; min-width: 100px; padding: 8px 12px;
+    }
+    .product-card img { height: 120px; }
+    #modalOverlay { max-width: 90%; width: 320px; padding: 16px;}
+    #modalOverlay img { height: 140px;}
+  }
+  @media (max-width: 600px) {
+    .header-main { padding: 12px 10px; gap: 8px; justify-content: space-between;}
+    nav.header-nav {
+      position: absolute; top: 60px; left: 0; right: 0;
+      background: rgba(15,25,50,0.95); flex-direction: column;
+      max-height: 0; overflow: hidden; opacity: 0;
+      transition: max-height 0.3s, opacity 0.3s; z-index: 1500;
+      padding: 0 15px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+    }
+    nav.header-nav.show {
+      max-height: 500px; opacity: 1; padding-top: 10px; padding-bottom: 10px;
+    }
+    nav.header-nav button { width: 100%; min-width: unset; margin-bottom: 8px; box-shadow: none; font-size: 1.1rem; text-align: center;}
+    nav.header-nav button:last-child { margin-bottom: 0;}
+    #hamburgerBtn { display: block; margin-left: 8px; flex-shrink: 0; }
+    .header-search { min-width: 100%; order: 3; margin-top: 8px;}
+    .header-search input[type=search] { width: 100%; max-width: 100%; padding: 8px 12px; font-size: 1rem;}
+    #contentContainer { padding: 110px 16px 140px;}
+  }
+  @media (max-width: 400px) {
+    nav.header-nav button { font-size: 1rem; padding: 10px 0;}
+    #modalOverlay h2 { font-size: 1.2rem;}
+    #modalOverlay p { font-size: 0.85rem;}
+    .view-btn { max-width: 100%; font-size: 0.9rem; padding: 8px 12px;}
+    #bottomBar button { min-width: 70px; font-size: 0.8rem; padding: 5px 8px; max-width: 110px;}
+    .socials-icons { gap: 8px;}
+    .social-icon-link { width: 27px; height: 27px;}
+    .social-icon-link svg { width: 14px; height: 14px;}
+  }
+</style>
+<!-- Remixicon CDN link (head section me add karein) -->
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+  <div class="header-main" role="banner">
+    <div class="brand-area">
+      <div class="brand-logo" aria-label="Brand Logo">RS</div>
+      <h1>RS Digital Store</h1>
+    </div>
+    <button id="hamburgerBtn" aria-label="Toggle menu" aria-expanded="false" aria-controls="primary-navigation">
+      <div></div><div></div><div></div>
+    </button>
+    <nav id="primary-navigation" class="header-nav" role="navigation" aria-label="Primary Navigation">
+      <button id="menuProducts" class="active" type="button">Products</button>
+      <button id="menuNotice" type="button">Notice Board</button>
+      <button id="menuAbout" type="button">About</button>
+      <button id="menuContact" type="button">Contact Us</button>
+      <button id="switchAdmin" class="switch-admin" type="button">Switch Admin Panel</button>
+    </nav>
+    <div class="header-search" role="search">
+      <input type="search" id="searchInput" placeholder="Search products..." aria-label="Search products" />
+    </div>
+  </div>
+  <main id="contentContainer">
+    <div id="productGrid" tabindex="0" aria-live="polite" aria-atomic="true"></div>
+
+    <section id="noticeBoard" style="display:none;" aria-live="polite" aria-atomic="true">
+      <h2>Notice Board</h2>
+      <div>
+        <p style="font-size:1.1rem;margin:16px 0 14px;color:#17fff5;">
+          <h2>If you are facing any problem in downloading any product or any download link is not working or broken then please let us know and we will fix it within 24 hours.</h2><br><h2 align="center">Keep sharing and supporting my website. </h2>
+          <br><h1 align="center">Thank You........</h1>
+        </p>
+      </div>
+    </section>
+
+    <section id="aboutSection" style="display:none;" aria-live="polite" aria-atomic="true">
+      <h2>About RS Digital Store</h2>
+      <p>
+     1. RS Digital Store is a digital product selling platform.<br>
+     2. Here you will easily get Premium Software, Codes and Digital Assets.<br>
+     3. Here you can demand any digital product as per your requirement.<br>4. Whatever digital product you demand, you will get it here on this website within 24 hours. <br>  5. If you need any product which is not available on this website, you can demand that product from me through my email or WhatsApp. That product will be made available to you on this website within 24 hours.  <br> <h2 align="center"> Please share this website with as many people as possible.</h2> <h2 align="center">Thank You.......... <br>Team RS Digital Store</h2>
+      </p>
+      <h3><p style="margin-bottom:8px;" align="center">
+      Founder & CEO : Rohit Kumar, Bihar, India<br>
+      Estd : 2025
+      </p></h3>
+    </section>
+
+    <section id="contactCard" style="display:none;" aria-live="polite" aria-atomic="true">
+     <div style="text-align: center;">
+  <h1>Contact Us</h1>
+  <p><strong>Brand:</strong> RS Digital Store</p>
+  <p><strong>Legal Operator:</strong> ROHIT KUMAR</p>
+  <p><strong>City/State/PIN:</strong> BIHAR, India, 805122</p>
+  <p><strong>Email:</strong> 
+    <a href="mailto:dellofficial795@gmail.com" style="color: #13ffe8; text-decoration: none;">
+      dellofficial795@gmail.com
+    </a>
+  </p>
+  <p><strong>Phone:</strong> +91 8017918011</p>
+  <p><strong>Address:</strong> BIJU BIGHA , NAWADA , BIHAR</p>
+  <div style="text-align: center;">
+  <!-- Rest of your content -->
+  <div class="socials-icons" style="margin-top:12px; display: flex; justify-content: center; gap: 15px;">
+    <a href="https://youtube.com/@rsstudioz14" class="social-icon-link" target="_blank" title="YouTube">
+      <i class="ri-youtube-line" style="color:#ff0000; font-size: 24px;"></i>
+    </a>
+    <a href="https://t.me/Rsgnsnvk18" class="social-icon-link" target="_blank" title="Telegram">
+      <i class="ri-telegram-line" style="color:#29b6f6; font-size: 24px;"></i>
+    </a>
+    <a href="https://wa.link/z9zztn" class="social-icon-link" target="_blank" title="WhatsApp">
+      <i class="ri-whatsapp-line" style="color:#25d366; font-size: 24px;"></i>
+    </a>
+    <a href="https://www.instagram.com/rsgnsnvk18?igsh=aXYyYjllMTgybjc3" class="social-icon-link" target="_blank" title="Instagram">
+      <i class="ri-instagram-line" style="color:#d6249f; font-size: 24px;"></i>
+    </a>
+    <a href="https://www.facebook.com/profile.php?id=100040348937165" class="social-icon-link" target="_blank" title="Facebook">
+      <i class="ri-facebook-fill" style="color:#1877F2; font-size: 24px;"></i>
+    </a>
+  </div>
+</div>
+
+</div>
+
+    </section>
+  </main>
+
+  <!-- Modal: Product View -->
+  <div id="modalOverlay" aria-hidden="true" role="dialog" tabindex="-1" style="display:none;">
+    <button id="bookmarkBtn" aria-label="Bookmark">☆</button>
+    <img id="modalImg" alt="Product Image" />
+    <h2 id="modalTitle"></h2>
+    <p id="modalDesc"></p>
+    <div id="modalDownloadLinks"></div>
+    <div id="modalButtons">
+      <button id="modalClose" class="modal-btn">Close</button>
+    </div>
+  </div>
+
+  <footer id="bottomBar" role="contentinfo">
+    <button data-policy="refund" type="button">Refund Policy</button>
+    <button data-policy="terms" type="button">Terms & Conditions</button>
+    <button data-policy="delivery" type="button">Delivery Policy</button>
+    <button data-policy="privacy" type="button">Privacy Policy</button>
+    <button data-policy="copyright" type="button">Copyright © RS Digital Store 2025</button>
+  </footer>
+  <div id="policyModal" role="dialog" aria-modal="true" style="display:none;">
+    <h3 id="policyTitle"></h3>
+    <div id="policyContent"></div>
+    <button id="policyCloseBtn">Close</button>
+  </div>
+<script>
+  const LS_PRODUCTS = 'admin_products';
+  let productsData = JSON.parse(localStorage.getItem(LS_PRODUCTS) || '{}');
+  let filteredProducts = {...productsData};
+  let currentProductId = null;
+
+  const navBtns = ['menuProducts', 'menuNotice', 'menuAbout', 'menuContact'];
+  navBtns.forEach(id => { document.getElementById(id).addEventListener('click', () => setActive(id)); });
+
+  function setActive(id) {
+    navBtns.forEach(bid => document.getElementById(bid).classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    showSection(id);
+    if(window.innerWidth <= 600) { toggleNav(false); }
+  }
+
+  document.getElementById('switchAdmin').addEventListener('click', () => { window.location.href = 'admin.html'; });
+
+  const productGrid = document.getElementById('productGrid');
+  const noticeBoard = document.getElementById('noticeBoard');
+  const aboutSection = document.getElementById('aboutSection');
+  const contactCard = document.getElementById('contactCard');
+  const searchInput = document.getElementById('searchInput');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalDesc = document.getElementById('modalDesc');
+  const modalImg = document.getElementById('modalImg');
+  const bookmarkBtn = document.getElementById('bookmarkBtn');
+  const modalDownloadLinks = document.getElementById('modalDownloadLinks');
+  const modalClose = document.getElementById('modalClose');
+  const bottomBar = document.getElementById('bottomBar');
+  const policyModal = document.getElementById('policyModal');
+  const policyTitle = document.getElementById('policyTitle');
+  const policyContent = document.getElementById('policyContent');
+  const policyCloseBtn = document.getElementById('policyCloseBtn');
+  const hamburgerBtn = document.getElementById('hamburgerBtn');
+  const headerNav = document.getElementById('primary-navigation');
+
+  hamburgerBtn.addEventListener('click', () => {
+    const expanded = hamburgerBtn.getAttribute('aria-expanded') === 'true';
+    toggleNav(!expanded);
+  });
+
+  function toggleNav(show) {
+    if(show) {
+      headerNav.classList.add('show');
+      hamburgerBtn.classList.add('open');
+      hamburgerBtn.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = "hidden";
+    } else {
+      headerNav.classList.remove('show');
+      hamburgerBtn.classList.remove('open');
+      hamburgerBtn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = "auto";
+    }
+  }
+
+  // Show appropriate section
+  function showSection(id) {
+    productGrid.style.display = 'none';
+    noticeBoard.style.display = 'none';
+    aboutSection.style.display = 'none';
+    contactCard.style.display = 'none';
+    if(id === 'menuProducts') {
+      productGrid.style.display = 'grid';
+      productsData = JSON.parse(localStorage.getItem(LS_PRODUCTS) || '{}');
+      filteredProducts = {...productsData};
+      renderProducts(filteredProducts);
+    } else if(id === 'menuNotice') {
+      noticeBoard.style.display = 'block';
+    } else if(id === 'menuAbout') {
+      aboutSection.style.display = 'block';
+    } else if(id === 'menuContact') {
+      contactCard.style.display = 'block';
+      contactCard.scrollIntoView({behavior: 'smooth'});
+    }
+  }
+
+  function renderProducts(products) {
+    productGrid.innerHTML = '';
+    if(Object.keys(products).length === 0) {
+      productGrid.innerHTML = '<p style="text-align:center; color:#777;">No products found.</p>';
+      return;
+    }
+    Object.entries(products).forEach(([id, p]) => {
+      if(!p) return;
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.tabIndex = 0;
+      card.setAttribute('role','button');
+      card.setAttribute('aria-label', p.title);
+      card.innerHTML = `
+        <img src="${p.imageUrl}" alt="${p.title}" />
+        <div class="product-title">${p.title}</div>
+        <button class="view-btn">View</button>
+      `;
+      card.onclick = () => openModal(id);
+      card.querySelector('.view-btn').onclick = e => {
+        e.stopPropagation();
+        openModal(id);
+      };
+      productGrid.appendChild(card);
+    });
+  }
+
+  function openModal(id) {
+    currentProductId = id;
+    const p = productsData[id];
+    modalTitle.textContent = p.title;
+    modalDesc.textContent = p.description;
+    modalImg.src = p.imageUrl;
+
+    modalDownloadLinks.innerHTML = "";
+    if(Array.isArray(p.downloadLinks) && p.downloadLinks.length > 0) {
+      p.downloadLinks.forEach(dl => {
+        const btn = document.createElement("a");
+        btn.href = dl.url;
+        btn.target = "_blank";
+        btn.textContent = dl.title;
+        btn.className = "download-link-btn";
+        btn.rel = "noopener";
+        modalDownloadLinks.appendChild(btn);
+      });
+    } else if (typeof p.downloadLink === "string" && p.downloadLink.trim() !== "") {
+      const btn = document.createElement("a");
+      btn.href = p.downloadLink;
+      btn.target = "_blank";
+      btn.textContent = "Download";
+      btn.className = "download-link-btn";
+      btn.rel = "noopener";
+      modalDownloadLinks.appendChild(btn);
+    } else {
+      modalDownloadLinks.innerHTML = "<span style='color:#f99;font-weight:700;'>No download links for this product.</span>";
+    }
+
+    modalOverlay.style.display = "flex";
+    document.body.style.overflow = "hidden";
+    document.getElementById('contentContainer').style.filter = "blur(6px)";
+    bottomBar.style.filter = "blur(6px)";
+    modalOverlay.focus();
+  }
+  function closeModal() {
+    modalOverlay.style.display = "none";
+    document.body.style.overflow = "auto";
+    document.getElementById('contentContainer').style.filter = "none";
+    bottomBar.style.filter = "none";
+  }
+  modalClose.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', e => {
+    if(e.target === modalOverlay) closeModal();
+  });
+
+  searchInput.addEventListener('input', () => {
+    const term = searchInput.value.trim().toLowerCase();
+    filteredProducts = {};
+    Object.entries(productsData).forEach(([id, p]) => {
+      if(p.title.toLowerCase().includes(term)) filteredProducts[id] = p;
+    });
+    renderProducts(filteredProducts);
+    setActive('menuProducts');
+  });
+
+  filteredProducts = {...productsData};
+  showSection('menuProducts');
+  setActive('menuProducts');
+
+  const policies = {
+    refund: "If you accidentally ordered a digital product or there is a technical issue, we offer a full refund within 7 days of purchase. Please contact us with your order ID and issue. Refund is not available for products that have already been downloaded or used.",
+    terms: "All digital products are for personal use only and may not be shared, resold, or distributed to others.Orders are considered final. Refunds are only provided as per our Refund Policy.Download link and access are provided after successful payment; we are not responsible for incompatibility with your device or software.Unauthorized use or duplication of our products is strictly prohibited.By making a purchase, you agree to all our terms and policies.",
+    delivery: "We process orders within 1-3 business days. Digital products are delivered instantly or immediately upon payment confirmation. There are no shipping charges since these are digital items.Please ensure that your contact information is correct to avoid delivery issues. If you face any problems receiving your product, contact us promptly for assistance.This policy is designed to ensure smooth delivery and customer satisfaction.",
+    privacy: "We respect your privacy and are committed to protecting your personal information. We collect only the necessary information such as name, email, and payment details to process your orders and improve your experience. Your information is kept secure and not shared with third parties without your consent.We use cookies and similar technologies to enhance your browsing experience. You have the right to access, update, or delete your personal information by contacting us.By using our website or services, you agree to this Privacy Policy. For any questions, please contact us at the provided email address.",
+    copyright: "© 2025 RS Digital Store. All rights reserved.All content, designs, and digital products on this website are the intellectual property of [Your Company Name]. Unauthorized copying, distribution, or reproduction is strictly prohibited.For permissions or inquiries, please contact us at dellofficial795@gmail.com.",
+  };
+  bottomBar.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.getAttribute("data-policy");
+      policyTitle.textContent = btn.textContent;
+      policyContent.textContent = policies[key] || "No info available.";
+      policyModal.style.display = "block";
+      document.body.style.overflow = "hidden";
+      document.getElementById('contentContainer').style.filter = "blur(6px)";
+      bottomBar.style.filter = "blur(6px)";
+    });
+  });
+  policyCloseBtn.addEventListener("click", () => {
+    policyModal.style.display = "none";
+    document.body.style.overflow = "auto";
+    document.getElementById('contentContainer').style.filter = "none";
+    bottomBar.style.filter = "none";
+  });
+  window.onload = function(){
+    modalOverlay.style.display="none";
+    policyModal.style.display="none";
+    document.body.style.overflow="auto";
+    document.getElementById('contentContainer').style.filter="none";
+    bottomBar.style.filter="none";
+    if(window.innerWidth <= 600){
+      toggleNav(false);
+    }
+  };
+  window.addEventListener('resize', () => {
+    if(window.innerWidth > 600){
+      toggleNav(false);
+    }
+  });
+</script>
+</body>
+</html>
